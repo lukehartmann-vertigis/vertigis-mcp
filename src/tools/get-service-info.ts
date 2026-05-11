@@ -8,7 +8,9 @@ export function register(server: McpServer, client: ArcGISClient): void {
     {
       description:
         "Returns detailed metadata for a specific ArcGIS service, including all layers and tables " +
-        "with their IDs, names, geometry types and spatial reference.",
+        "with their IDs, names, geometry types and spatial reference. " +
+        "WORKFLOW: Call after list_services to inspect a service before querying it. " +
+        "Note the layer IDs — they are required by get_layer_info and query_layer.",
       inputSchema: {
         service_name: z
           .string()

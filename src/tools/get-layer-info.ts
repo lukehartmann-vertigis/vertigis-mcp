@@ -7,8 +7,12 @@ export function register(server: McpServer, client: ArcGISClient): void {
     "get_layer_info",
     {
       description:
-        "Returns metadata and the complete field schema for a single layer or table within a service. " +
-        "Use this before querying to understand what fields are available.",
+        "Returns metadata and the complete field schema for a single layer or table within a service, " +
+        "including field types, aliases, and coded-value domains. " +
+        "Coded-value domains translate integer codes to human-readable labels " +
+        "(e.g. STATUS=1 → 'Active'). " +
+        "WORKFLOW: Call this before query_layer to understand which fields exist and what " +
+        "values are valid for filtered queries.",
       inputSchema: {
         service_name: z.string().describe("Service name."),
         service_type: z.string().describe("Service type."),

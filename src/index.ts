@@ -17,6 +17,8 @@ import { register as registerListServices } from "./tools/list-services.js";
 import { register as registerGetServiceInfo } from "./tools/get-service-info.js";
 import { register as registerGetLayerInfo } from "./tools/get-layer-info.js";
 import { register as registerQueryLayer } from "./tools/query-layer.js";
+import { register as registerFindLayer } from "./tools/find-layer.js";
+import { register as registerGetFeatureCount } from "./tools/get-feature-count.js";
 
 const server = new McpServer({ name: "vertigis-mcp", version: "1.0.0" });
 const client = new ArcGISClient();
@@ -25,6 +27,8 @@ registerListServices(server, client);
 registerGetServiceInfo(server, client);
 registerGetLayerInfo(server, client);
 registerQueryLayer(server, client);
+registerFindLayer(server, client);
+registerGetFeatureCount(server, client);
 
 const transport = new StdioServerTransport();
 await server.connect(transport);

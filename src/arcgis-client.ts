@@ -30,10 +30,31 @@ export interface LayerInfo {
   fields?: FieldInfo[];
 }
 
+export interface CodedValue {
+  name: string;
+  code: string | number;
+}
+
+export interface FieldDomain {
+  type: string;
+  name?: string;
+  codedValues?: CodedValue[];
+  range?: [number, number];
+}
+
 export interface FieldInfo {
   name: string;
   type: string;
   alias: string;
+  domain?: FieldDomain;
+}
+
+export interface FindLayerResult {
+  service_name: string;
+  service_type: string;
+  layer_id: number;
+  layer_name: string;
+  layer_type?: string;
 }
 
 export interface QueryResult {
@@ -212,7 +233,17 @@ export class ArcGISClient {
       name: string;
       type: string;
       geometryType?: string;
-      fields?: Array<{ name: string; type: string; alias: string }>;
+      fields?: Array<{
+        name: string;
+        type: string;
+        alias: string;
+        domain?: {
+          type: string;
+          name?: string;
+          codedValues?: Array<{ name: string; code: string | number }>;
+          range?: [number, number];
+        };
+      }>;
     }>(`/rest/services/${serviceName}/${serviceType}/${layerId}`);
 
     return {
@@ -220,7 +251,12 @@ export class ArcGISClient {
       name: raw.name,
       type: raw.type,
       geometryType: raw.geometryType,
-      fields: raw.fields?.map((f) => ({ name: f.name, type: f.type, alias: f.alias })),
+      fields: raw.fields?.map((f) => ({
+        name: f.name,
+        type: f.type,
+        alias: f.alias,
+        ...(f.domain ? { domain: f.domain } : {}),
+      })),
     };
   }
 
@@ -264,5 +300,83 @@ export class ArcGISClient {
       `/rest/services/${serviceName}/${serviceType}/${layerId}/query`,
       body
     );
+  }
+
+  /**
+   * Returns the count of features matching a WHERE clause without fetching records.
+   */
+  async getFeatureCount(
+    serviceName: string,
+    serviceType: string,
+    layerId: number,
+    where?: string
+  ): Promise<number> {
+    const body: Record<string, string> = {
+      where: where ?? "1=1",
+      returnCountOnly: "true",
+    };
+    const result = await this.postJson<{ count: number }>(
+      `/rest/services/${serviceName}/${serviceType}/${layerId}/query`,
+      body
+    );
+    return result.count;
+  }
+
+  /**
+   * Recursively lists all services across all folders.
+   */
+  private async listAllServices(): Promise<ServiceInfo[]> {
+    const root = await this.listServices();
+    const all: ServiceInfo[] = [...root.services];
+
+    await Promise.all(
+      root.folders.map(async (folder) => {
+        try {
+          const folderInfo = await this.listServices(folder);
+          all.push(...folderInfo.services);
+        } catch {
+          // skip inaccessible folders
+        }
+      })
+    );
+
+    return all;
+  }
+
+  /**
+   * Searches all services for layers whose name contains the given keyword
+   * (case-insensitive). Returns enough info to call query_layer directly.
+   */
+  async findLayer(keyword: string): Promise<FindLayerResult[]> {
+    const allServices = await this.listAllServices();
+    const lowerKeyword = keyword.toLowerCase();
+    const results: FindLayerResult[] = [];
+
+    await Promise.all(
+      allServices.map(async (service) => {
+        try {
+          const info = (await this.getServiceInfo(service.name, service.type)) as {
+            layers?: Array<{ id: number; name: string; type?: string }>;
+            tables?: Array<{ id: number; name: string; type?: string }>;
+          };
+          const entries = [...(info.layers ?? []), ...(info.tables ?? [])];
+          for (const layer of entries) {
+            if (layer.name.toLowerCase().includes(lowerKeyword)) {
+              results.push({
+                service_name: service.name,
+                service_type: service.type,
+                layer_id: layer.id,
+                layer_name: layer.name,
+                ...(layer.type ? { layer_type: layer.type } : {}),
+              });
+            }
+          }
+        } catch {
+          // skip services that are not accessible or lack layer metadata
+        }
+      })
+    );
+
+    return results;
   }
 }
