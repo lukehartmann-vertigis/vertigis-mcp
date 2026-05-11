@@ -1,0 +1,27 @@
+{
+  "servers": {
+    "vertigis": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${workspaceFolder}/dist/index.js"],
+      "env": {
+        "ARCGIS_BASE_URL": "https://dev002.networks.vertigisapps.com/server",
+        "ARCGIS_USERNAME": "${input:arcgisUsername}",
+        "ARCGIS_PASSWORD": "${input:arcgisPassword}"
+      }
+    }
+  },
+  "inputs": [
+    {
+      "id": "arcgisUsername",
+      "type": "promptString",
+      "description": "ArcGIS Username"
+    },
+    {
+      "id": "arcgisPassword",
+      "type": "promptString",
+      "description": "ArcGIS Password",
+      "password": true
+    }
+  ]
+}
