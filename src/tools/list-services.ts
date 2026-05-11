@@ -9,7 +9,10 @@ export function register(server: McpServer, client: ArcGISClient): void {
       description:
         "Lists all GIS services and sub-folders available on the ArcGIS Server. " +
         "Optionally restricted to a specific folder. Returns service names, types (MapServer, " +
-        "FeatureServer, UtilityNetworkServer, …) and their URLs.",
+        "FeatureServer, UtilityNetworkServer, …) and their URLs. " +
+        "WORKFLOW: Call without arguments first to discover the root folder and sub-folders. " +
+        "Then call again for each sub-folder of interest. " +
+        "If you already know what kind of data you want, use find_layer instead.",
       inputSchema: {
         folder: z
           .string()

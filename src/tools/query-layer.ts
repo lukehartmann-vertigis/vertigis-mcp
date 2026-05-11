@@ -8,7 +8,11 @@ export function register(server: McpServer, client: ArcGISClient): void {
     {
       description:
         "Queries features from a specific layer using an SQL WHERE clause and optional spatial filter. " +
-        "Returns attribute values and optionally geometry. Default limit is 100 records.",
+        "Returns attribute values and optionally geometry. Default limit is 100 records. " +
+        "WORKFLOW: Requires service_name, service_type, and layer_id — use find_layer to discover " +
+        "these if you only know what kind of data you want. " +
+        "Use get_layer_info first to learn field names, types, and valid coded values. " +
+        "Use get_feature_count to check the total number of matching records before fetching.",
       inputSchema: {
         service_name: z.string().describe("Service name."),
         service_type: z.string().describe("Service type."),
@@ -50,6 +54,13 @@ export function register(server: McpServer, client: ArcGISClient): void {
             "Type of geometry for spatial filter: esriGeometryEnvelope, esriGeometryPoint, " +
               "esriGeometryPolyline, esriGeometryPolygon."
           ),
+        spatial_rel: z
+          .string()
+          .optional()
+          .describe(
+            "Spatial relationship for the filter, e.g. 'esriSpatialRelIntersects' (default), " +
+              "'esriSpatialRelContains', 'esriSpatialRelWithin'."
+          ),
         in_sr: z
           .string()
           .optional()
@@ -73,6 +84,7 @@ export function register(server: McpServer, client: ArcGISClient): void {
       order_by_fields,
       geometry,
       geometry_type,
+      spatial_rel,
       in_sr,
       out_sr,
     }) => {
@@ -84,6 +96,7 @@ export function register(server: McpServer, client: ArcGISClient): void {
         orderByFields: order_by_fields,
         geometry,
         geometryType: geometry_type,
+        spatialRel: spatial_rel,
         inSR: in_sr,
         outSR: out_sr,
       });
